@@ -1,41 +1,51 @@
-"""
-Demonstration of the GazeTracking library.
-Check the README.md for complete documentation.
-"""
-
 import cv2
 from gaze_tracking import GazeTracking
-
+from time import sleep
+import pyautogui
 gaze = GazeTracking()
 webcam = cv2.VideoCapture(0)
 
-while True:
-    # We get a new frame from the webcam
-    _, frame = webcam.read()
+confcounter = 0
 
-    # We send this frame to GazeTracking to analyze it
+click = False
+left = False
+right = False
+center = False
+
+
+while True:
+    _, frame = webcam.read()
     gaze.refresh(frame)
 
-    frame = gaze.annotated_frame()
+    new_frame = gaze.annotated_frame()
     text = ""
 
+    if gaze.is_right():
+        text = "Looking right"
+        right = True
+    if gaze.is_left():
+        text = "Looking left"
+        left = True
+    if gaze.is_center():
+        text = "Looking center"
+        center = True
     if gaze.is_blinking():
         text = "Blinking"
-    elif gaze.is_right():
-        text = "Looking right"
-    elif gaze.is_left():
-        text = "Looking left"
-    elif gaze.is_center():
-        text = "Looking center"
+        click = True
 
-    cv2.putText(frame, text, (90, 60), cv2.FONT_HERSHEY_DUPLEX, 1.6, (147, 58, 31), 2)
+    if click:
+        confcounter += 1
+        click = False
+        if confcounter > 3:
+            print("click")
+            pyautogui.click()
+            click = False
+            confcounter = 0
 
-    left_pupil = gaze.pupil_left_coords()
-    right_pupil = gaze.pupil_right_coords()
-    cv2.putText(frame, "Left pupil:  " + str(left_pupil), (90, 130), cv2.FONT_HERSHEY_DUPLEX, 0.9, (147, 58, 31), 1)
-    cv2.putText(frame, "Right pupil: " + str(right_pupil), (90, 165), cv2.FONT_HERSHEY_DUPLEX, 0.9, (147, 58, 31), 1)
 
-    cv2.imshow("Demo", frame)
+
+    cv2.putText(new_frame, text, (60, 60), cv2.FONT_HERSHEY_DUPLEX, 2, (255, 0, 0), 2)
+    cv2.imshow("Demo", new_frame)
 
     if cv2.waitKey(1) == 27:
         break
